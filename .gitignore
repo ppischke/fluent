@@ -1,0 +1,14 @@
+*.9*
+*.asv
+*.dat
+*.gz
+*.dpm
+*.log
+*.sum
+autosave*
+libudf*
+ln*
+log
+core
+makelog
+cleanup*

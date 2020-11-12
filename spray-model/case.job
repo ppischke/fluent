@@ -1,0 +1,110 @@
+#/bin/bash
+######################################################################
+#           SGE-Beispielskript fuer Fluent                           #
+######################################################################
+
+# INFO
+# Zeilen, die mit # beginnen: Kommentarzeilen
+# Zeilen, die mit #$ beginnen: qsub-Optionen
+
+# Name des Jobs, unter dem er in der Queue angezeigt wird
+#$ -N diesel
+
+# Diese Option legt fest, dass vor dem Starten des Jobs zuerst in das
+# Verzeichnis gewechselt wird, aus dem heraus der Job abgeschickt wurde.
+# Man kann also relative Pfade benutzen, bzw. auf eine Datei im
+# aktuellen Verzeichnis ohne Pfadangabe zugreifen.
+# Ohne diese Option wird der Job auf dem ausführenden Rechenknoten
+# im Home-Verzeichnis des Benutzers ausgeführt.
+#$ -cwd
+
+# Angabe des Ausgabefiles
+# Die Standardausgabe des Programms wird in eine Datei umgeleitet. Mit dieser
+# Option wird der Name der Datei definiert. Sollte die Datei schon
+# existieren, wird die Ausgabe angehangen.
+# Es koennen die Variablen $HOME, $USER, $JOB_ID, $JOB_NAME, $HOSTNAME
+# und $TASK_ID verwendet werden.
+#$ -o console.log
+
+# Ausgabe- und Fehlermeldungen werden in eine Datei geschrieben:
+#$ -j y
+
+# Angabe der Queue, in die der Job eingereiht werden soll
+# Nicht veraendern!
+#$ -q batch.q
+
+# Email-Benachrichtigung
+# Adresse des Empfaengers
+#$ -M pischke@wsa.rwth-aachen.de
+
+# Umgebungsvariablen mitnehmen
+#$ -V
+
+# Benachrichtigung bei: (b)egin , (e)nd , (a)borted
+# Hier muessen die ersten Buchstaben der gewuenschten Benachrichtigungsereignisse
+# angegeben werden. Beispiel: #$ -m bea ( Nachricht bei Start, Ende und Abbruch)
+#$ -m ae
+
+# Parallele Umgebung
+# Diese Option wird benötigt, um eine parallele Rechnung zu starten. Fuer eine
+# Rechnung auf nur einem Rechenkern, muss sie auskommentiert werden!
+# Die Zahl gibt die Anzahl der anzufordernden Rechenkerne an.
+# Es kann auch ein Bereich angegeben werden. z.B. "4-8"
+# Im Beispiel würde der Job mit 8 Parallelprozessen starten, wenn diese verfuegbar
+# waeren, sich aber auch mit weniger (min. 4 Kerne) zufrieden geben.
+#$ -pe fluent_pe 4
+
+# Fluent-Release
+# 12.1|12.0|6.3.26
+FL_RELEASE="12.0"
+
+# Fluent-Version
+FL_VERSION="3ddp"
+
+# Names des Journal-Files angeben
+FLUENT_JOURNAL="case.jou"
+
+# ========== AB HIER NICHTS MEHR AENDERN ===============================
+
+if   [ $FL_RELEASE == "12.1" ]; then
+	FL_CMD="/ansys_inc/v121/fluent/bin/fluent -r12.1.4"
+elif [ $FL_RELEASE == "12.0" ]; then
+	FL_CMD="/ansys_inc/v120/fluent/bin/fluent -r12.0.16"
+elif [ $FL_RELEASE == "6.3.26" ]; then
+	FL_CMD="/usr/local/Fluent.Inc/bin/fluent"
+else
+	echo "Unbekannte Fluent Release ausgewaehlt!"
+	echo "Job beendet!"
+	exit
+fi
+
+# Fuer Probelauf als Skript ggf. die Variable NSLOTS setzen
+if [$NSLOTS == ""]; then
+	NSLOTS=1
+fi
+
+echo "---------"
+echo -n "Ausfuehrender Host: "
+hostname
+echo "---------"
+
+if [ $NSLOTS -lt 2 ]; then
+	echo "Starte seriellen Job..."
+	PAR_OPT=""
+else
+	echo "Starte parallelen Job..."
+	PAR_OPT="-t$NSLOTS -pib"
+fi
+
+echo "Startzeit: `date`"
+
+# Programmaufruf wie im interaktiven Fall. Dabei ist zu beachten, dass
+# im Batch-Betrieb der Job nicht in den Hintergrund geschickt werden
+# darf und keinerlei Graphikfunktionalitaet zur Verfuegung steht.
+# Erklaerung der Parameter:
+# -g : Startet Fluent ohne graph. Benutzeroberflaeche
+# -i <FILENAME> : uebergibt das Journal-File an Fluent
+
+$FL_CMD -ssh $FL_VERSION -g -i $FLUENT_JOURNAL $PAR_OPT
+
+echo "Ende der Rechnung: `date`"

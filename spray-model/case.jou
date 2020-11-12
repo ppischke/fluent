@@ -1,0 +1,50 @@
+;  Kommentarzeilen beginnen mit einem Semikolon
+
+;; BATCH OPTIONEN: Fluent stellt keine Fragen und wird bei Fehlern beendet
+;  Keinesfalls auskommentieren; kann Batch Queue verstopfen.
+/file/set-batch-options no yes yes no
+/file/write-cleanup-script
+
+;; LESEN DES CASE-FILES
+;  Environment-Variablen können hier nicht benutzt werden.
+/rc "case-diesel.cas"
+
+;; LESEN DES DATA-FILES
+;  Environment-Variablen können hier nicht benutzt werden.
+; /rd "temp.dat.gz"
+
+;; AUTOSAVE-PFAD SETZEN
+/file/auto-save/root-name "autosave/q"
+/file/auto-save/data-frequency 20
+
+;; UDF: KOMPILIEREN
+;  Wenn das CASE-File richtig vorbereitet wurde, werden UDFs
+;   automatisch geladen und müssen zuvor nicht kompiliert werden.
+;  Es muss der vollständige Pfad zur UDF angegeben werden.
+; /define/user-defined/compiled-functions compile "libudf"
+; yes
+; UDF.c
+
+;; UDF: LADEN
+; /define/user-defined/compiled-functions load "libudf"
+/define/user-defined/execute-on-demand "load_config::libudf"
+
+;; INITIALISIERUNG
+;  1. Befehl: Initialisierung von Zone ZONE-ID
+;  2. Befehl: Initialisierung ausführen
+; /solve/initialize/compute-defaults/velocity-inlet ZONE-ID
+/solve/initialize/initialize-flow
+
+;; RESIDUEN UEBERWACHEN
+;  Schreibe Residuen in Konsole, keine graphische Ausgabe
+/solve/monitors/residual/plot no
+/solve/monitors/residual/print yes
+
+;; Iteration starten (instationaer)
+;  1. Parameter: Number of physical time steps
+;  2. Parameter: Number of iterations per time step
+/solve/set/time-step 1e-6
+/solve/dual-time-iterate 400 25
+
+;;Fluent beenden
+/exit y
