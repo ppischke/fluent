@@ -12,3 +12,4 @@ log
 core
 makelog
 cleanup*
+.DS_Store
